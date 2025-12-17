@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Graph Generator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -68,7 +70,7 @@
 
                 <div id="graphTab" class="tab-content active">
                     <div id="graphOutput" class="empty-state">
-                        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 3v18h18"></path>
                             <path d="M18 17l-5-5-3 3-5-5"></path>
                         </svg>
@@ -132,7 +134,7 @@
             
             const preview = document.getElementById('dataPreview');
             
-            let html = `<p><strong>Total Rows:</strong> ${data.total_rows}</p>`;
+            let html = `<p style="padding: 10px;"><strong>Total Rows:</strong> ${data.total_rows}</p>`;
             html += '<div class="table-container"><table><thead><tr>';
             
             data.columns.forEach(col => {

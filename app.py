@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from data_generator import DataGenerator
 from graph_generator import GraphGenerator
-import json
 
 app = Flask(__name__)
 

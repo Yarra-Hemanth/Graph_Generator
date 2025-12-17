@@ -23,7 +23,7 @@ class DataGenerator:
         prices = []
         for i in range(n):
             price = price * (1 + np.random.normal(0.001, 0.02))
-            prices.append(max(price, 10))  # Prevent negative prices
+            prices.append(max(price, 10))
         
         # Create comprehensive dataset
         df = pd.DataFrame({
