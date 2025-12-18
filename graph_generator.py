@@ -1,6 +1,7 @@
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
+import json
 
 class GraphValidator:
     '''Validates data for different graph types'''
@@ -120,13 +121,24 @@ class GraphGenerator:
                     'errors': [f"Graph type '{graph_type}' not supported"]
                 }
             
+            # FIXED: Use include_plotlyjs=False since we're loading it in the page
+            # This prevents double-loading and script conflicts
+            html = fig.to_html(
+                full_html=False, 
+                include_plotlyjs=False,  # Changed from 'cdn' to False
+                div_id='plotly-graph'
+            )
+            
+            print(f"Generated HTML length: {len(html)} characters")  # Debug log
+            
             return {
                 'success': True,
-                'html': fig.to_html(full_html=False, include_plotlyjs='cdn'),
+                'html': html,
                 'warnings': validation['warnings']
             }
             
         except Exception as e:
+            print(f"Error in graph generation: {str(e)}")  # Debug log
             return {
                 'success': False,
                 'errors': [f"Error generating graph: {str(e)}"]

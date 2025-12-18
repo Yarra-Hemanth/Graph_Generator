@@ -193,8 +193,13 @@ header p {
 }
 
 #graphOutput {
-    min-height: 500px;
+    min-height: 520px;
+    width: 100%;
+    background: #ffffff;          /* 🔥 solid background */
+    border-radius: 6px;
+    padding: 10px;
 }
+
 
 .empty-state {
     display: flex;
