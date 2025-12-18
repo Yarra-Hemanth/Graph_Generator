@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Graph Generator</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Plotly CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
 </head>
 <body>
     <div class="container">
@@ -90,70 +90,106 @@
         let columns = [];
         let graphTypes = [];
 
+        // Helper function to execute scripts in injected HTML
+        function executeScripts(containerElement) {
+            const scripts = containerElement.querySelectorAll('script');
+            scripts.forEach((oldScript) => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
         // Load initial data
         async function init() {
+            console.log('Initializing application...');
             await loadColumns();
             await loadGraphTypes();
             await loadDataPreview();
+            console.log('Application initialized successfully!');
         }
 
         // Load columns
         async function loadColumns() {
-            const response = await fetch('/api/columns');
-            const data = await response.json();
-            columns = data.columns;
-            
-            const xAxis = document.getElementById('xAxis');
-            const yAxis = document.getElementById('yAxis');
-            const groupBy = document.getElementById('groupBy');
-            
-            columns.forEach(col => {
-                const option = `<option value="${col.name}">${col.name} (${col.unique_values} unique)</option>`;
-                xAxis.innerHTML += option;
-                yAxis.innerHTML += option;
-                groupBy.innerHTML += option;
-            });
+            try {
+                console.log('Loading columns...');
+                const response = await fetch('/api/columns');
+                const data = await response.json();
+                columns = data.columns;
+                console.log('Columns loaded:', columns.length);
+                
+                const xAxis = document.getElementById('xAxis');
+                const yAxis = document.getElementById('yAxis');
+                const groupBy = document.getElementById('groupBy');
+                
+                columns.forEach(col => {
+                    const option = `<option value="${col.name}">${col.name} (${col.unique_values} unique)</option>`;
+                    xAxis.innerHTML += option;
+                    yAxis.innerHTML += option;
+                    groupBy.innerHTML += option;
+                });
+            } catch (error) {
+                console.error('Error loading columns:', error);
+                showMessage('Failed to load columns: ' + error.message, 'error');
+            }
         }
 
         // Load graph types
         async function loadGraphTypes() {
-            const response = await fetch('/api/graph-types');
-            const data = await response.json();
-            graphTypes = data.graph_types;
-            
-            const graphType = document.getElementById('graphType');
-            graphTypes.forEach(type => {
-                graphType.innerHTML += `<option value="${type.value}">${type.label}</option>`;
-            });
+            try {
+                console.log('Loading graph types...');
+                const response = await fetch('/api/graph-types');
+                const data = await response.json();
+                graphTypes = data.graph_types;
+                console.log('Graph types loaded:', graphTypes.length);
+                
+                const graphType = document.getElementById('graphType');
+                graphTypes.forEach(type => {
+                    graphType.innerHTML += `<option value="${type.value}">${type.label}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading graph types:', error);
+                showMessage('Failed to load graph types: ' + error.message, 'error');
+            }
         }
 
         // Load data preview
         async function loadDataPreview() {
-            const response = await fetch('/api/data-preview');
-            const data = await response.json();
-            
-            const preview = document.getElementById('dataPreview');
-            
-            let html = `<p style="padding: 10px;"><strong>Total Rows:</strong> ${data.total_rows}</p>`;
-            html += '<div class="table-container"><table><thead><tr>';
-            
-            data.columns.forEach(col => {
-                html += `<th>${col}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-            
-            data.preview.forEach(row => {
-                html += '<tr>';
+            try {
+                console.log('Loading data preview...');
+                const response = await fetch('/api/data-preview');
+                const data = await response.json();
+                console.log('Data preview loaded:', data.total_rows, 'rows');
+                
+                const preview = document.getElementById('dataPreview');
+                
+                let html = `<p style="padding: 10px;"><strong>Total Rows:</strong> ${data.total_rows}</p>`;
+                html += '<div class="table-container"><table><thead><tr>';
+                
                 data.columns.forEach(col => {
-                    const value = row[col] !== null ? row[col] : 'N/A';
-                    const displayValue = typeof value === 'number' ? value.toFixed(2) : value;
-                    html += `<td>${displayValue}</td>`;
+                    html += `<th>${col}</th>`;
                 });
-                html += '</tr>';
-            });
-            
-            html += '</tbody></table></div>';
-            preview.innerHTML = html;
+                html += '</tr></thead><tbody>';
+                
+                data.preview.forEach(row => {
+                    html += '<tr>';
+                    data.columns.forEach(col => {
+                        const value = row[col] !== null ? row[col] : 'N/A';
+                        const displayValue = typeof value === 'number' ? value.toFixed(2) : value;
+                        html += `<td>${displayValue}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+                preview.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading data preview:', error);
+                showMessage('Failed to load data preview: ' + error.message, 'error');
+            }
         }
 
         // Update graph description
@@ -189,8 +225,9 @@
             });
         });
 
-        // Generate graph
+        // Generate graph - FIXED VERSION
         document.getElementById('generateBtn').addEventListener('click', async () => {
+            console.log('=== Generate Button Clicked ===');
             const messages = document.getElementById('messages');
             messages.innerHTML = '';
             
@@ -200,6 +237,8 @@
             const yAxis = document.getElementById('yAxis').value;
             const groupBy = document.getElementById('groupBy').value;
             
+            console.log('Form values:', { title, graphType, xAxis, yAxis, groupBy });
+            
             if (!title || !graphType || !xAxis || !yAxis) {
                 showMessage('Please fill in all required fields', 'error');
                 return;
@@ -208,6 +247,7 @@
             showMessage('Generating graph...', 'info');
             
             try {
+                console.log('Sending POST request to /api/generate-graph...');
                 const response = await fetch('/api/generate-graph', {
                     method: 'POST',
                     headers: {
@@ -222,30 +262,72 @@
                     })
                 });
                 
+                console.log('Response status:', response.status);
                 const result = await response.json();
+                console.log('Response success:', result.success);
                 
                 if (result.success) {
-                    document.getElementById('graphOutput').innerHTML = result.html;
+                    console.log('HTML received, length:', result.html ? result.html.length : 0);
+                    
+                    // METHOD 1: Direct innerHTML injection with script execution
+                    const graphOutput = document.getElementById('graphOutput');
+                    
+                    // Clear the container first
+                    graphOutput.innerHTML = '';
+                    
+                    // Create a temporary container
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = result.html;
+                    
+                    // Move all content to the actual container
+                    while (tempDiv.firstChild) {
+                        graphOutput.appendChild(tempDiv.firstChild);
+                    }
+                    
+                    // Execute any scripts that were in the HTML
+                    executeScripts(graphOutput);
+                    
+                    console.log('✅ Graph HTML injected and scripts executed');
                     
                     // Switch to graph tab
                     document.querySelector('[data-tab="graph"]').click();
                     
-                    showMessage('Graph generated successfully!', 'success');
+                    // Clear messages and show success
+                    messages.innerHTML = '';
+                    showMessage('✅ Graph generated successfully!', 'success');
                     
                     if (result.warnings && result.warnings.length > 0) {
                         result.warnings.forEach(warning => {
-                            showMessage(warning, 'warning');
+                            showMessage('⚠️ ' + warning, 'warning');
                         });
                     }
+                    
+                    // Extra debug: Check if Plotly div exists
+                    setTimeout(() => {
+                        const plotlyDiv = graphOutput.querySelector('.plotly-graph-div');
+                        if (plotlyDiv) {
+                            console.log('✅ Plotly div found:', plotlyDiv.id);
+                        } else {
+                            console.warn('⚠️ No Plotly div found in output');
+                            console.log('Output innerHTML:', graphOutput.innerHTML.substring(0, 500));
+                        }
+                    }, 100);
+                    
                 } else {
-                    showMessage('Failed to generate graph', 'error');
-                    result.errors.forEach(error => {
-                        showMessage(error, 'error');
-                    });
+                    console.error('Generation failed:', result);
+                    messages.innerHTML = '';
+                    showMessage('❌ Failed to generate graph', 'error');
+                    if (result.errors) {
+                        result.errors.forEach(error => {
+                            showMessage('❌ ' + error, 'error');
+                        });
+                    }
                 }
                 
             } catch (error) {
-                showMessage('Network error: ' + error.message, 'error');
+                console.error('Network/Parse error:', error);
+                messages.innerHTML = '';
+                showMessage('❌ Error: ' + error.message, 'error');
             }
         });
 
@@ -263,7 +345,11 @@
         }
 
         // Initialize on load
-        init();
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');
+            console.log('Plotly available?', typeof Plotly !== 'undefined');
+            init();
+        });
     </script>
 </body>
 </html>
